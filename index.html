@@ -217,14 +217,6 @@
         <option value="B">گرووپی B | Group B</option>
       </select>
 
-      <div class="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border">
-        <label class="text-[11px] font-bold text-gray-500 px-1">لە | From</label>
-        <input type="date" id="admin-report-date-from" class="p-1.5 border rounded-lg text-xs bg-white">
-        <label class="text-[11px] font-bold text-gray-500 px-1">بۆ | To</label>
-        <input type="date" id="admin-report-date-to" class="p-1.5 border rounded-lg text-xs bg-white">
-        <button onclick="clearReportDates()" title="سڕینەوەی بەروار | Clear dates" class="px-2 py-1 text-gray-400 hover:text-red-600 font-bold text-xs">✕</button>
-      </div>
-
       <button onclick="loadAbsenceReports(5)" class="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xs rounded-lg shadow-sm">پێوەری 5% | Metric 5%</button>
       <button onclick="loadAbsenceReports(10)" class="px-3 py-2 text-white font-bold text-xs rounded-lg shadow-sm transition-colors" style="background-color: #f97316;" onmouseover="this.style.backgroundColor='#f97316'" onmouseout="this.style.backgroundColor='#f97316'">پێوەری 10% | Metric 10%</button>
       <button onclick="loadAbsenceReports(15)" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow-sm">سەروو 10%  | Metric 15%</button>
@@ -781,29 +773,16 @@
     return result;
   }
 
-  function clearReportDates() {
-    document.getElementById('admin-report-date-from').value = "";
-    document.getElementById('admin-report-date-to').value = "";
-  }
-
   function loadAbsenceReports(threshold) {
     const shift = document.getElementById('admin-report-shift').value;
     const filterYear = document.getElementById('admin-report-year').value;
     const filterGroup = document.getElementById('admin-report-group').value;
-    const dateFrom = document.getElementById('admin-report-date-from').value;
-    const dateTo = document.getElementById('admin-report-date-to').value;
-
-    if (dateFrom && dateTo && dateFrom > dateTo) {
-      return alert(isKurdish ? "بەرواری دەستپێک دەبێت پێش بەرواری کۆتایی بێت" : "The 'From' date must be before the 'To' date.");
-    }
     
     document.getElementById('table-admin-reports').dataset.currentThreshold = threshold;
-    document.getElementById('table-admin-reports').dataset.currentDateFrom = dateFrom;
-    document.getElementById('table-admin-reports').dataset.currentDateTo = dateTo;
     
     document.getElementById('admin-reports-tbody').innerHTML = "<tr><td colspan='5' class='text-center p-4 font-bold animate-pulse'>لێکدانەوەی ڕێژەکان... | Calculating...</td></tr>";
     
-    apiCall('calculateAbsenceMetrics', { shift, dateFrom, dateTo }).then(data => {
+    apiCall('calculateAbsenceMetrics', { shift }).then(data => {
       masterAdminCalculatedData = data;
       renderAdminReports(filterByMetric(data, threshold));
     });
@@ -827,10 +806,6 @@
     const threshold = parseInt(document.getElementById('table-admin-reports').dataset.currentThreshold) || 0;
     const filterYear = document.getElementById('admin-report-year').value;
     const filterGroup = document.getElementById('admin-report-group').value;
-    const dateFrom = document.getElementById('table-admin-reports').dataset.currentDateFrom || "";
-    const dateTo = document.getElementById('table-admin-reports').dataset.currentDateTo || "";
-    const dateSuffix = (dateFrom || dateTo) ? `_${dateFrom || 'start'}_${dateTo || 'today'}` : "";
-    const dateRangeLabel = (dateFrom || dateTo) ? `بەرواری | Date range: ${dateFrom || '...'} → ${dateTo || (isKurdish ? 'ئەمڕۆ' : 'today')}` : "";
 
     let filtered = filterByMetric(masterAdminCalculatedData, threshold);
 
@@ -854,9 +829,9 @@
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "ڕاپۆرتی غیابات");
-      XLSX.writeFile(wb, `Pukhtey_Ghyabat_2026${dateSuffix}.xlsx`);
+      XLSX.writeFile(wb, "Pukhtey_Ghyabat_2026.xlsx");
     } else if (type === 'docx') {
-      let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>ڕاپۆرتی نائامادەبوون</title><style>table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; } th, td { border: 1px solid black; padding: 8px; text-align: center; font-size: 14px; } th { background-color: #f2f2f2; }</style></head><body dir="rtl"><h2 style="text-align:center;">ڕاپۆرتی نائامادەبوون (غیابات)</h2>${dateRangeLabel ? `<p style="text-align:center;font-size:12px;color:#555;">${dateRangeLabel}</p>` : ""}<table><thead><tr><th>ژمارە</th><th>ناوی تەواو</th><th>قۆناغ</th><th>گرووپ</th><th>بابەت</th><th>ڕێژە</th></tr></thead><tbody>`;
+      let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>ڕاپۆرتی نائامادەبوون</title><style>table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; } th, td { border: 1px solid black; padding: 8px; text-align: center; font-size: 14px; } th { background-color: #f2f2f2; }</style></head><body dir="rtl"><h2 style="text-align:center;">ڕاپۆرتی نائامادەبوون (غیابات)</h2><table><thead><tr><th>ژمارە</th><th>ناوی تەواو</th><th>قۆناغ</th><th>گرووپ</th><th>بابەت</th><th>ڕێژە</th></tr></thead><tbody>`;
       exportData.forEach(r => {
         html += `<tr><td>${r["ژمارە"]}</td><td>${r["ناوی تەواو"]}</td><td>${r["قۆناغ"]}</td><td>${r["گرووپ"]}</td><td>${r["بابەت"]}</td><td>${r["ڕێژە"]}</td></tr>`;
       });
@@ -864,7 +839,7 @@
       const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url; link.download = `Pukhtey_Ghyabat_2026${dateSuffix}.doc`; link.click();
+      link.href = url; link.download = 'Pukhtey_Ghyabat_2026.doc'; link.click();
     }
   }
 
